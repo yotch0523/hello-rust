@@ -1,46 +1,43 @@
-fn main() {
-    let dove = Dove {};
-    let duck = Duck {};
+use futures::{executor, future::join_all};
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Context, Poll};
 
-    let bird_vec: Vec<Box<dyn Tweet>> = vec![Box::new(dove), Box::new(duck)];
-    for bird in bird_vec {
-        bird.tweet();
-    }
+struct CountDown(u32);
 
-    // borrow
-    let important_data = "Hello, world.".to_string();
+impl Future for CountDown {
+    type Output = String;
 
-    calc_data(&important_data);
-    println!("{}", important_data);
-
-    // lifetime
-    let mut x = 5;
-    let _y = &x; // yのライフタイムがここで終了するので、後続にxの可変参照を渡してもエラーにならない
-    let z = &mut x;
-
-    dbg!(z);
-    dbg!(x);
-}
-
-trait Tweet {
-    fn tweet(&self);
-}
-
-struct Dove;
-struct Duck;
-
-impl Tweet for Dove {
-    fn tweet(&self) {
-        println!("Coo!");
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<String> {
+        if self.0 == 0 {
+            Poll::Ready("Zero!!".to_string())
+        } else {
+            println!("{}", self.0);
+            self.0 -= 1;
+            cx.waker().wake_by_ref();
+            Poll::Pending
+        }
     }
 }
 
-impl Tweet for Duck {
-    fn tweet(&self) {
-        println!("Quack!");
+pub fn main() {
+    let countdown_future1 = CountDown(10);
+    let countdown_future2 = CountDown(20);
+    let cd_set = join_all(vec![countdown_future1, countdown_future2]);
+    let res = executor::block_on(cd_set);
+    for (i, s) in res.iter().enumerate() {
+        println!("{} : {}", i, s);
     }
 }
 
-fn calc_data(data: &String) {
-    println!("{}", data);
+pub async fn async_add(left: i32, right: i32) -> i32 {
+    left + right
+}
+
+pub fn something_great_async_function() -> impl Future<Output = i32> {
+    async {
+        let ans = async_add(1, 1).await;
+        println!("{}", ans);
+        ans
+    }
 }

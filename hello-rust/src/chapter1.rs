@@ -1,4 +1,4 @@
-fn main () {
+fn main() {
     enum_code();
     trait_code();
 }
@@ -40,8 +40,8 @@ impl Animal for Cat {
 }
 
 fn trait_code() {
-    let dog = Dog{};
-    let cat = Cat{};
+    let dog = Dog {};
+    let cat = Cat {};
     show_animal_data(dog);
     show_animal_data(cat);
 }
